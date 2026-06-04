@@ -2162,11 +2162,10 @@ async function fetchJSON(url) {
 
 async function loadFromSupabase() {
   try {
-    const [hvac, racks, tableros, mediciones] = await Promise.all([
+    const [hvac, racks, tableros] = await Promise.all([
       fetchJSON(`${SUPABASE_URL}/rest/v1/detalle_hvac?select=id_equipo,nombre,ubicacion,tablero,tipo,marca,modelo,serie,fase,r_a,s_a,t_a,kw,estado,power_meter,monitoreable`),
       fetchJSON(`${SUPABASE_URL}/rest/v1/detalle_racks?select=id_equipo,nombre,ubicacion,tablero,tipo,marca,modelo,serie,fase,r_a,s_a,t_a,kw,estado,power_meter,monitoreable&tipo=eq.CRAC`),
-      fetchJSON(`${SUPABASE_URL}/rest/v1/detalle_tableros?select=elemento,alimentado_desde,alimenta_a,tipo,fase,r_a,s_a,t_a,kw,estado,power_meter,monitoreable`),
-      fetchJSON(`${SUPABASE_URL}/rest/v1/mediciones?sala=eq.TELXIUS&tablero=in.(TDCC 1,TDCC 2,TDCC 3)&order=created_at.desc&select=tablero,potencia_kw,periodo,created_at`)
+      fetchJSON(`${SUPABASE_URL}/rest/v1/detalle_tableros?select=elemento,alimentado_desde,alimenta_a,tipo,fase,r_a,s_a,t_a,kw,estado,power_meter,monitoreable`)
     ]);
 
     hvac.forEach(r => { if (r.id_equipo) DB[r.id_equipo] = formatRow(r, 'hvac'); });
@@ -2222,20 +2221,33 @@ async function loadFromSupabase() {
     // Debug: mostrar cuántos elementos se mapearon
     console.log('DB keys:', Object.keys(DB));
 
-    // Tomar el último registro por tablero y mostrar kW en el diagrama
-    const latest = {};
-    mediciones.forEach(r => {
-      if (!latest[r.tablero]) latest[r.tablero] = r;
+    // Labels kW para TCC 2.81, 2.86, 2.87 desde detalle_tableros (suma de kw por elemento)
+    const TCC_KW_MAP = {
+      'TCC_2.81': 'TCC 2.81',
+      'TCC_2.86': 'TCC 2.86',
+      'TCC_2.87': 'TCC 2.87',
+    };
+    // Agrupar tableros por elemento y sumar kw
+    const kwPorElemento = {};
+    tableros.forEach(r => {
+      if (!r.elemento || r.kw == null) return;
+      if (!kwPorElemento[r.elemento]) kwPorElemento[r.elemento] = 0;
+      kwPorElemento[r.elemento] += Number(r.kw);
     });
-    Object.entries(MEDICION_MAP).forEach(([tableroName, cfg]) => {
-      const m = latest[tableroName];
-      if (m) {
-        showKwLabel(cfg.svgId, m.potencia_kw, m.periodo);
-        if (DB[cfg.svgId]) DB[cfg.svgId].kw = m.potencia_kw?.toFixed(2) + ' kW';
+    // Mostrar label sobre cada TCC
+    Object.entries(TCC_KW_MAP).forEach(([svgId, elementoBase]) => {
+      // Buscar coincidencia parcial en kwPorElemento
+      let totalKw = null;
+      Object.entries(kwPorElemento).forEach(([elem, kw]) => {
+        if (elem.includes(elementoBase)) totalKw = (totalKw || 0) + kw;
+      });
+      if (totalKw != null) {
+        showKwLabel(svgId, totalKw, null);
+        if (DB[svgId]) DB[svgId].kw = totalKw.toFixed(2) + ' kW';
       }
     });
 
-    // Mostrar kW de ACUs desde detalle_hvac
+    // Labels kW para ACUs desde detalle_hvac
     const ACU_IDS = ['ACU-439','ACU-440','ACU-441','ACU-442','ACU-443'];
     ACU_IDS.forEach(acuId => {
       const d = DB[acuId];

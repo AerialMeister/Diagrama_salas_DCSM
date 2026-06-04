@@ -74,7 +74,7 @@ body{font-family:Arial,sans-serif;background:#f0f2f5}
   <div class="kpi-card purple">
     <div class="kpi-label">CUR</div>
     <div class="kpi-value" id="kpi-cur">—</div>
-    <div class="kpi-unit">Cap. instalada / Consumo HVAC</div>
+    <div class="kpi-unit">Cap. instalada / Consumo Carga Final</div>
   </div>
 </div>
 <div id="main">
@@ -2505,12 +2505,12 @@ function updateKPIs() {
 
   const pue = kwCarga > 0 ? (kwCarga + kwHvac) / kwCarga : null;
   const capInstalada = (32.2 * 3) + (21.5 * 2);
-  const cur = kwHvac > 0 ? capInstalada / kwHvac : null;
+  const cur = kwCarga > 0 ? (capInstalada / kwCarga) * 100 : null;
 
   document.getElementById('kpi-carga').textContent = kwCarga > 0 ? kwCarga.toFixed(2) + ' kW' : '—';
   document.getElementById('kpi-hvac').textContent  = kwHvac  > 0 ? kwHvac.toFixed(2)  + ' kW' : '—';
   document.getElementById('kpi-pue').textContent   = pue  ? pue.toFixed(3)  : '—';
-  document.getElementById('kpi-cur').textContent   = cur  ? cur.toFixed(3)  : '—';
+  document.getElementById('kpi-cur').textContent   = cur  ? cur.toFixed(1) + ' %'  : '—';
 }
 
 loadFromSupabase();

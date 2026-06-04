@@ -2489,6 +2489,30 @@ function closePanel() {
   if (selEl) { selEl.classList.remove('sel'); selEl = null; }
 }
 
+function updateKPIs() {
+  const tccIds = ['TCC_2.81', 'TCC_2.86', 'TCC_2.87'];
+  let kwCarga = 0;
+  tccIds.forEach(id => {
+    const d = DB[id];
+    if (d && d.kw) kwCarga += parseFloat(d.kw);
+  });
+
+  let kwHvac = 0;
+  ['ACU-439','ACU-440','ACU-441','ACU-442','ACU-443'].forEach(id => {
+    const d = DB[id];
+    if (d && d._kwRaw != null) kwHvac += d._kwRaw;
+  });
+
+  const pue = kwCarga > 0 ? (kwCarga + kwHvac) / kwCarga : null;
+  const capInstalada = (32.2 * 3) + (21.5 * 2);
+  const cur = kwHvac > 0 ? capInstalada / kwHvac : null;
+
+  document.getElementById('kpi-carga').textContent = kwCarga > 0 ? kwCarga.toFixed(2) + ' kW' : '—';
+  document.getElementById('kpi-hvac').textContent  = kwHvac  > 0 ? kwHvac.toFixed(2)  + ' kW' : '—';
+  document.getElementById('kpi-pue').textContent   = pue  ? pue.toFixed(3)  : '—';
+  document.getElementById('kpi-cur').textContent   = cur  ? cur.toFixed(3)  : '—';
+}
+
 loadFromSupabase();
 </script>
 </body>

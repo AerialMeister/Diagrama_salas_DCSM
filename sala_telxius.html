@@ -57,7 +57,7 @@ body{font-family:Arial,sans-serif;background:#f0f2f5}
 
 <div id="kpi-bar">
   <div class="kpi-card green">
-    <div class="kpi-label">Consumo Carga</div>
+    <div class="kpi-label">Consumo Carga Final</div>
     <div class="kpi-value" id="kpi-carga">—</div>
     <div class="kpi-unit">kW (TCC 2.81 + 2.86 + 2.87)</div>
   </div>
@@ -2289,7 +2289,6 @@ async function loadFromSupabase() {
       const kw = acuKwMap[acuId];
       if (kw != null) {
         showKwLabel(acuId, kw, null);
-        // Actualizar DB con el kW correcto para que el panel también lo muestre
         if (DB[acuId]) {
           DB[acuId].kw = kw.toFixed(2) + ' kW';
           DB[acuId]._kwRaw = kw;
@@ -2297,10 +2296,12 @@ async function loadFromSupabase() {
       }
     });
 
+    // Calcular KPIs una vez que todos los valores están listos
+    updateKPIs();
+
     const now = new Date().toLocaleString('es-CL');
     document.getElementById('sync-info').textContent = `Actualizado: ${now} · ${Object.keys(DB).length} elementos`;
     document.getElementById('loading-overlay').style.display = 'none';
-    updateKPIs();
 
   } catch(err) {
     console.error('Error:', err);

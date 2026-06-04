@@ -74,7 +74,7 @@ body{font-family:Arial,sans-serif;background:#f0f2f5}
   <div class="kpi-card purple">
     <div class="kpi-label">CUR</div>
     <div class="kpi-value" id="kpi-cur">—</div>
-    <div class="kpi-unit">Cap. instalada / Consumo Carga Final</div>
+    <div class="kpi-unit">Carga térmica / Cap. instalada</div>
   </div>
 </div>
 <div id="main">
@@ -2505,7 +2505,7 @@ function updateKPIs() {
 
   const pue = kwCarga > 0 ? (kwCarga + kwHvac) / kwCarga : null;
   const capInstalada = (32.2 * 3) + (21.5 * 2);
-  const cur = kwCarga > 0 ? (capInstalada / kwCarga) * 100 : null;
+  const cur = capInstalada > 0 ? (kwHvac / capInstalada) * 100 : null;
 
   document.getElementById('kpi-carga').textContent = kwCarga > 0 ? kwCarga.toFixed(2) + ' kW' : '—';
   document.getElementById('kpi-hvac').textContent  = kwHvac  > 0 ? kwHvac.toFixed(2)  + ' kW' : '—';

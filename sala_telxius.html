@@ -2280,10 +2280,12 @@ async function loadFromSupabase() {
 // Inserta un label de kW dentro del SVG sobre el tablero correspondiente
 function showKwLabel(svgId, kw, periodo) {
   if (kw == null) return;
-  const svg = document.querySelector('svg');
+  // Buscar el SVG del diagrama (no el logo — puede haber varios SVGs en la página)
+  const allSvgs = document.querySelectorAll('svg');
+  const svg = Array.from(allSvgs).find(s => s.querySelectorAll('.hit').length > 0);
   if (!svg) return;
 
-  // Buscar el hit rect por data-id (querySelector falla con puntos en el ID)
+  // Buscar el hit rect por data-id
   const allHits = svg.querySelectorAll('.hit');
   const hitRect = Array.from(allHits).find(el => el.dataset.id === svgId);
   if (!hitRect) return;

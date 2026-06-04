@@ -2162,12 +2162,16 @@ async function fetchJSON(url) {
 
 async function loadFromSupabase() {
   try {
-    const [hvac, racks, tableros, mediciones] = await Promise.all([
+    const [hvac, racks, tableros] = await Promise.all([
       fetchJSON(`${SUPABASE_URL}/rest/v1/detalle_hvac?select=id_equipo,nombre,ubicacion,tablero,tipo,marca,modelo,serie,fase,r_a,s_a,t_a,kw,estado,power_meter,monitoreable`),
       fetchJSON(`${SUPABASE_URL}/rest/v1/detalle_racks?select=id_equipo,nombre,ubicacion,tablero,tipo,marca,modelo,serie,fase,r_a,s_a,t_a,kw,estado,power_meter,monitoreable&tipo=eq.CRAC`),
-      fetchJSON(`${SUPABASE_URL}/rest/v1/detalle_tableros?select=elemento,alimentado_desde,alimenta_a,tipo,fase,r_a,s_a,t_a,kw,estado,power_meter,monitoreable`),
-      fetchJSON(`${SUPABASE_URL}/rest/v1/mediciones?sala=eq.TELXIUS&tablero=in.(TDCC%201,TDCC%202,TDCC%203)&order=created_at.desc&select=tablero,potencia_kw,created_at`)
+      fetchJSON(`${SUPABASE_URL}/rest/v1/detalle_tableros?select=elemento,alimentado_desde,alimenta_a,tipo,fase,r_a,s_a,t_a,kw,estado,power_meter,monitoreable`)
     ]);
+    // Mediciones separada para que un error no bloquee el resto
+    let mediciones = [];
+    try {
+      mediciones = await fetchJSON(`${SUPABASE_URL}/rest/v1/mediciones?sala=eq.TELXIUS&tablero=in.(TDCC%201,TDCC%202,TDCC%203)&order=created_at.desc&select=tablero,potencia_kw,created_at`);
+    } catch(e) { console.warn('mediciones no disponible:', e); }
 
     hvac.forEach(r => {
       if (r.id_equipo) DB[r.id_equipo] = formatRow(r, 'hvac');

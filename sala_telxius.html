@@ -2240,13 +2240,12 @@ async function loadFromSupabase() {
     });
 
     // Labels kW para ACUs desde detalle_hvac
-    // Sumar kW de todos los registros de detalle_hvac que coincidan con cada ACU
     const ACU_IDS = ['ACU-439','ACU-440','ACU-441','ACU-442','ACU-443'];
     const acuKwMap = {};
     hvac.forEach(r => {
       const nombre = r.nombre || r.id_equipo;
       if (!nombre) return;
-      const matchId = ACU_IDS.find(id => nombre.includes(id) || id.includes(nombre));
+      const matchId = ACU_IDS.find(id => nombre === id || nombre.includes(id));
       if (matchId && r.kw != null) {
         acuKwMap[matchId] = (acuKwMap[matchId] || 0) + Number(r.kw);
       }
@@ -2255,7 +2254,11 @@ async function loadFromSupabase() {
       const kw = acuKwMap[acuId];
       if (kw != null) {
         showKwLabel(acuId, kw, null);
-        if (DB[acuId]) DB[acuId].kw = kw.toFixed(2) + ' kW';
+        // Actualizar DB con el kW correcto para que el panel también lo muestre
+        if (DB[acuId]) {
+          DB[acuId].kw = kw.toFixed(2) + ' kW';
+          DB[acuId]._kwRaw = kw;
+        }
       }
     });
 
@@ -2276,8 +2279,9 @@ function showKwLabel(svgId, kw, periodo) {
   const svg = document.querySelector('svg');
   if (!svg) return;
 
-  // Buscar el hit rect del tablero para obtener su posición
-  const hitRect = svg.querySelector(`.hit[data-id="${svgId}"]`);
+  // Buscar el hit rect por data-id (querySelector falla con puntos en el ID)
+  const allHits = svg.querySelectorAll('.hit');
+  const hitRect = Array.from(allHits).find(el => el.dataset.id === svgId);
   if (!hitRect) return;
 
   const x = parseFloat(hitRect.getAttribute('x'));
